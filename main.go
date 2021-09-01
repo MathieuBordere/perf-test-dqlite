@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"strings"
 	"time"
 
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/backoff"
+	"github.com/Rican7/retry/jitter"
 	"github.com/Rican7/retry/strategy"
 	"github.com/canonical/go-dqlite/app"
 	"github.com/canonical/go-dqlite/client"
@@ -48,10 +50,13 @@ func query(ctx context.Context, db *sql.DB, runnerId string) {
 		return err
 	}
 
+	seed := time.Now().UnixNano()
+	random := rand.New(rand.NewSource(seed))
+
 	err := retry.Retry(
 		action,
-		strategy.Limit(20),
-		strategy.Backoff(backoff.Linear(200*time.Millisecond)),
+		strategy.Limit(2000),
+		strategy.BackoffWithJitter(backoff.Linear(10*time.Millisecond), jitter.Deviation(random, 0.8)),
 	)
 
 	if err != nil {
@@ -81,10 +86,13 @@ func insert(ctx context.Context, db *sql.DB, runnerId string) {
 		return err
 	}
 
+	seed := time.Now().UnixNano()
+	random := rand.New(rand.NewSource(seed))
+
 	err := retry.Retry(
 		action,
-		strategy.Limit(20),
-		strategy.Backoff(backoff.Linear(200*time.Millisecond)),
+		strategy.Limit(2000),
+		strategy.BackoffWithJitter(backoff.Linear(10*time.Millisecond), jitter.Deviation(random, 0.8)),
 	)
 
 	if err != nil {
